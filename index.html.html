@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reading Olympics Book Recommender</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #5f6b7a;
+      --primary: #4f46e5;
+      --primary-dark: #3730a3;
+      --accent: #0f766e;
+      --danger: #b91c1c;
+      --warning-bg: #fff7ed;
+      --warning-border: #fb923c;
+      --success-bg: #ecfdf5;
+      --success-border: #10b981;
+      --border: #d9e0ea;
+      --shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    header {
+      background: linear-gradient(135deg, #4338ca, #0f766e);
+      color: white;
+      padding: 28px 20px;
+      text-align: center;
+    }
+
+    header h1 {
+      margin: 0 0 8px;
+      font-size: clamp(1.8rem, 4vw, 2.6rem);
+    }
+
+    header p {
+      margin: 0 auto;
+      max-width: 760px;
+      font-size: 1rem;
+      opacity: 0.95;
+    }
+
+    main {
+      width: min(980px, calc(100% - 28px));
+      margin: 24px auto 48px;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 22px;
+      margin-bottom: 20px;
+    }
+
+    .step-label {
+      display: inline-block;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: white;
+      background: var(--primary);
+      border-radius: 999px;
+      padding: 5px 10px;
+      margin-bottom: 8px;
+    }
+
+    h2 {
+      margin-top: 0;
+      margin-bottom: 8px;
+      font-size: 1.35rem;
+    }
+
+    .instructions, .helper {
+      color: var(--muted);
+      margin-top: 4px;
+      font-size: 0.92rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .field.full {
+      grid-column: 1 / -1;
+    }
+
+    label, legend {
+      display: block;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    input[type="text"],
+    textarea,
+    select {
+      width: 100%;
+      padding: 11px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 1rem;
+      background: white;
+      color: var(--text);
+    }
+
+    input[type="file"] {
+      width: 100%;
+      padding: 10px;
+      border: 2px dashed var(--border);
+      border-radius: 10px;
+      background: #fafafa;
+    }
+
+    textarea {
+      min-height: 95px;
+      resize: vertical;
+    }
+
+    fieldset {
+      border: 0;
+      padding: 0;
+      margin: 0;
+    }
+
+    .choices {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+    }
+
+    .choice {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 8px 11px;
+      background: #fff;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.92rem;
+    }
+
+    .choice input { margin: 0; }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 11px 16px;
+      font-weight: 700;
+      font-size: 0.96rem;
+      cursor: pointer;
+      transition: transform 0.08s ease, opacity 0.2s ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .primary { background: var(--primary); color: white; }
+    .secondary { background: #e0e7ff; color: #312e81; }
+    .neutral { background: #e5e7eb; color: #111827; }
+    .confirm { background: var(--accent); color: white; }
+
+    .status {
+      display: none;
+      border-left: 5px solid;
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-top: 16px;
+      font-weight: 600;
+    }
+
+    .status.error {
+      display: block;
+      background: #fef2f2;
+      border-color: #ef4444;
+      color: #991b1b;
+    }
+
+    .status.warning {
+      display: block;
+      background: var(--warning-bg);
+      border-color: var(--warning-border);
+      color: #9a3412;
+    }
+
+    .status.success {
+      display: block;
+      background: var(--success-bg);
+      border-color: var(--success-border);
+      color: #065f46;
+    }
+
+    .results {
+      display: none;
+    }
+
+    .book-card {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin-top: 14px;
+      background: #fbfcff;
+    }
+
+    .book-card h3 {
+      margin: 0 0 4px;
+      color: var(--primary-dark);
+    }
+
+    .meta {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 9px;
+    }
+
+    .badge {
+      display: inline-block;
+      margin: 2px 6px 2px 0;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #3730a3;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .hidden { display: none !important; }
+
+    footer {
+      color: var(--muted);
+      text-align: center;
+      font-size: 0.85rem;
+      padding: 12px 20px 30px;
+    }
+
+    @media (max-width: 720px) {
+      .grid { grid-template-columns: 1fr; }
+      .field.full { grid-column: auto; }
+      .actions { flex-direction: column; }
+      button { width: 100%; }
+    }
+
+    @media print {
+      header, #inputSection, #statusMessage, #tryAgainBtn, #startOverResultsBtn, #confirmBtn, #downloadBtn, footer {
+        display: none !important;
+      }
+
+      body { background: white; }
+      main { width: 100%; margin: 0; }
+      .card { box-shadow: none; border: 0; }
+      #resultsSection { display: block !important; }
+      .book-card { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Reading Olympics Book Recommender</h1>
+    <p>Find two books from your Reading Olympics list that may match your reading preferences.</p>
+  </header>
+
+  <main>
+    <section class="card" id="inputSection">
+      <span class="step-label">Step 1</span>
+      <h2>Tell us what you like to read</h2>
+      <p class="instructions">
+        Upload your current Reading Olympics book list, then complete as many preference questions as you can.
+        The recommender will only use titles found in the uploaded list.
+      </p>
+
+      <div class="grid">
+        <div class="field full">
+          <label for="bookFile">Upload Reading Olympics Book List</label>
+          <input id="bookFile" type="file" accept=".csv,.txt,.tsv" />
+          <div class="helper">
+            Best results: upload a CSV or tab-separated file with a header row. Helpful columns include Title, Author, Genre,
+            Format, Fiction/Nonfiction, Length, Description, and Topics. Title is required. The app does not invent missing book information.
+          </div>
+        </div>
+
+        <div class="field full">
+          <fieldset>
+            <legend>Preferred genre</legend>
+            <div class="helper">Choose one or more genres you enjoy.</div>
+            <div class="choices">
+              <label class="choice"><input type="checkbox" name="genre" value="adventure">Adventure</label>
+              <label class="choice"><input type="checkbox" name="genre" value="humor">Humor</label>
+              <label class="choice"><input type="checkbox" name="genre" value="nonfiction">Nonfiction</label>
+              <label class="choice"><input type="checkbox" name="genre" value="horror">Horror</label>
+              <label class="choice"><input type="checkbox" name="genre" value="realistic fiction">Realistic Fiction</label>
+              <label class="choice"><input type="checkbox" name="genre" value="historical fiction">Historical Fiction</label>
+              <label class="choice"><input type="checkbox" name="genre" value="fantasy">Fantasy</label>
+              <label class="choice"><input type="checkbox" name="genre" value="biography">Biography</label>
+            </div>
+          </fieldset>
+        </div>
+
+        <div class="field full">
+          <fieldset>
+            <legend>Preferred format</legend>
+            <div class="helper">Choose one or more book formats you enjoy.</div>
+            <div class="choices">
+              <label class="choice"><input type="checkbox" name="format" value="chapter book">Chapter Book</label>
+              <label class="choice"><input type="checkbox" name="format" value="graphic novel">Graphic Novel</label>
+              <label class="choice"><input type="checkbox" name="format" value="poetry">Poetry</label>
+              <label class="choice"><input type="checkbox" name="format" value="picture book">Picture Book</label>
+            </div>
+          </fieldset>
+        </div>
+
+        <div class="field">
+          <label for="favoriteAuthor">Favorite author</label>
+          <input id="favoriteAuthor" type="text" placeholder="Example: Kate DiCamillo" />
+          <div class="helper">Enter an author whose books you usually enjoy.</div>
+        </div>
+
+        <div class="field">
+          <label for="recentBooks">Recent favorite book or books</label>
+          <input id="recentBooks" type="text" placeholder="Example: The Wild Robot, Amari and the Night Brothers" />
+          <div class="helper">Enter one or more books you recently liked.</div>
+        </div>
+
+        <div class="field">
+          <label for="fictionPreference">Do you prefer fiction or nonfiction?</label>
+          <select id="fictionPreference">
+            <option value="">Choose one</option>
+            <option value="fiction">Fiction</option>
+            <option value="nonfiction">Nonfiction</option>
+            <option value="either">Either / No Preference</option>
+          </select>
+          <div class="helper">Choose the type of reading you usually prefer.</div>
+        </div>
+
+        <div class="field">
+          <label for="bookLength">Preferred book length</label>
+          <select id="bookLength">
+            <option value="">Choose one</option>
+            <option value="short">Short</option>
+            <option value="medium">Medium</option>
+            <option value="longer">Longer</option>
+            <option value="no preference">No Preference</option>
+          </select>
+          <div class="helper">Choose the length you are most comfortable reading.</div>
+        </div>
+
+        <div class="field full">
+          <label for="avoid">What do you want to avoid in a book?</label>
+          <textarea id="avoid" placeholder="Example: scary scenes, animals getting hurt, romance, war"></textarea>
+          <div class="helper">List topics, themes, or features you do not want in your recommendations.</div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="primary" id="generateBtn">Generate My Book List</button>
+        <button class="neutral" id="startOverBtn">Start Over</button>
+      </div>
+
+      <div id="statusMessage" class="status" role="alert" aria-live="polite"></div>
+    </section>
+
+    <section class="card results" id="resultsSection">
+      <span class="step-label">Step 2</span>
+      <h2>Your Recommended Reading Olympics Books</h2>
+      <p class="instructions">
+        These recommendations are based only on information available in the uploaded book list.
+      </p>
+
+      <div id="recommendations"></div>
+
+      <div class="actions">
+        <button class="secondary" id="tryAgainBtn">Try Again</button>
+        <button class="neutral" id="startOverResultsBtn">Start Over</button>
+        <button class="confirm" id="confirmBtn">Confirm My List</button>
+        <button class="primary hidden" id="downloadBtn">Download PDF</button>
+      </div>
+
+      <div id="resultStatus" class="status" role="alert" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <footer>
+    This prototype works entirely in your browser. It does not upload the Reading Olympics list to a server.
+  </footer>
+
+  <script>
+    const state = {
+      books: [],
+      recommendations: [],
+      previousSets: new Set(),
+      confirmed: false,
+      fileLoaded: false
+    };
+
+    const $ = id => document.getElementById(id);
+
+    function showStatus(element, message, type = "error") {
+      element.className = "status " + type;
+      element.textContent = message;
+    }
+
+    function clearStatus(element) {
+      element.className = "status";
+      element.textContent = "";
+    }
+
+    function normalizeKey(key) {
+      return String(key || "")
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, "");
+    }
+
+    function normalizeText(value) {
+      return String(value || "").toLowerCase().trim();
+    }
+
+    function splitDelimitedLine(line, delimiter) {
+      const result = [];
+      let current = "";
+      let inQuotes = false;
+
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        const next = line[i + 1];
+
+        if (char === '"' && inQuotes && next === '"') {
+          current += '"';
+          i++;
+        } else if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === delimiter && !inQuotes) {
+          result.push(current.trim());
+          current = "";
+        } else {
+          current += char;
+        }
+      }
+
+      result.push(current.trim());
+      return result;
+    }
+
+    function parseBookFile(text, fileName) {
+      const cleanText = text.replace(/\r/g, "").trim();
+      if (!cleanText) return [];
+
+      const lines = cleanText.split("\n").filter(line => line.trim() !== "");
+      if (lines.length < 2) return [];
+
+      const delimiter = fileName.toLowerCase().endsWith(".tsv")
+        ? "\t"
+        : (lines[0].includes("\t") ? "\t" : ",");
+
+      const headers = splitDelimitedLine(lines[0], delimiter);
+      const normalizedHeaders = headers.map(normalizeKey);
+
+      const aliases = {
+        title: ["title", "booktitle", "name"],
+        author: ["author", "bookauthor"],
+        genre: ["genre", "genres", "category", "categories"],
+        format: ["format", "bookformat", "type"],
+        fiction: ["fictionnonfiction", "fictionornonfiction", "typeoffiction", "fictionstatus"],
+        length: ["length", "booklength", "pages", "pagelength"],
+        description: ["description", "summary", "synopsis", "annotation", "notes"],
+        topics: ["topics", "subjects", "subject", "themes", "keywords"]
+      };
+
+      const findIndex = list => normalizedHeaders.findIndex(h => list.includes(h));
+
+      const indexes = {};
+      for (const key in aliases) indexes[key] = findIndex(aliases[key]);
+
+      if (indexes.title === -1) {
+        throw new Error("The uploaded file needs a column labeled Title or Book Title.");
+      }
+
+      const rows = [];
+      for (let i = 1; i < lines.length; i++) {
+        const cells = splitDelimitedLine(lines[i], delimiter);
+        const title = (cells[indexes.title] || "").trim();
+        if (!title) continue;
+
+        rows.push({
+          id: i + "-" + title,
+          title,
+          author: indexes.author >= 0 ? (cells[indexes.author] || "").trim() : "",
+          genre: indexes.genre >= 0 ? (cells[indexes.genre] || "").trim() : "",
+          format: indexes.format >= 0 ? (cells[indexes.format] || "").trim() : "",
+          fiction: indexes.fiction >= 0 ? (cells[indexes.fiction] || "").trim() : "",
+          length: indexes.length >= 0 ? (cells[indexes.length] || "").trim() : "",
+          description: indexes.description >= 0 ? (cells[indexes.description] || "").trim() : "",
+          topics: indexes.topics >= 0 ? (cells[indexes.topics] || "").trim() : ""
+        });
+      }
+
+      return rows;
+    }
+
+    $("bookFile").addEventListener("change", async (event) => {
+      clearStatus($("statusMessage"));
+      const file = event.target.files[0];
+
+      if (!file) {
+        state.books = [];
+        state.fileLoaded = false;
+        return;
+      }
+
+      const allowed = [".csv", ".txt", ".tsv"];
+      const lowerName = file.name.toLowerCase();
+
+      if (!allowed.some(ext => lowerName.endsWith(ext))) {
+        state.books = [];
+        state.fileLoaded = false;
+        showStatus(
+          $("statusMessage"),
+          "Please upload a CSV, TXT, or TSV file. If your list is in Excel or Google Sheets, export it as CSV first.",
+          "error"
+        );
+        return;
+      }
+
+      try {
+        const text = await file.text();
+        const parsed = parseBookFile(text, file.name);
+
+        if (!parsed.length) {
+          state.books = [];
+          state.fileLoaded = false;
+          showStatus(
+            $("statusMessage"),
+            "I could not find usable book records. Make sure the file has a header row and at least a Title column.",
+            "error"
+          );
+          return;
+        }
+
+        state.books = parsed;
+        state.fileLoaded = true;
+        state.previousSets.clear();
+
+        showStatus(
+          $("statusMessage"),
+          `Book list loaded successfully: ${parsed.length} titles found.`,
+          "success"
+        );
+      } catch (error) {
+        state.books = [];
+        state.fileLoaded = false;
+        showStatus($("statusMessage"), error.message || "The file could not be read.", "error");
+      }
+    });
+
+    function getSelections(name) {
+      return [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(el => el.value);
+    }
+
+    function getPreferences() {
+      return {
+        genres: getSelections("genre"),
+        formats: getSelections("format"),
+        favoriteAuthor: $("favoriteAuthor").value.trim(),
+        recentBooks: $("recentBooks").value.trim(),
+        fictionPreference: $("fictionPreference").value,
+        bookLength: $("bookLength").value,
+        avoid: $("avoid").value.trim()
+      };
+    }
+
+    function preferenceCount(prefs) {
+      let count = 0;
+      if (prefs.genres.length) count++;
+      if (prefs.formats.length) count++;
+      if (prefs.favoriteAuthor) count++;
+      if (prefs.recentBooks) count++;
+      if (prefs.fictionPreference && prefs.fictionPreference !== "either") count++;
+      if (prefs.bookLength && prefs.bookLength !== "no preference") count++;
+      if (prefs.avoid) count++;
+      return count;
+    }
+
+    function tokenize(text) {
+      return normalizeText(text)
+        .replace(/[^a-z0-9\s]/g, " ")
+        .split(/\s+/)
+        .filter(word => word.length >= 4);
+    }
+
+    function inferLengthMatch(bookLengthValue, preference) {
+      const raw = normalizeText(bookLengthValue);
+      if (!raw || !preference || preference === "no preference") return null;
+
+      if (raw.includes(preference)) return true;
+
+      const number = parseInt(raw.replace(/[^0-9]/g, ""), 10);
+      if (!Number.isNaN(number)) {
+        if (preference === "short") return number <= 150;
+        if (preference === "medium") return number > 150 && number <= 300;
+        if (preference === "longer") return number > 300;
+      }
+
+      return false;
+    }
+
+    function scoreBook(book, prefs) {
+      const searchable = [
+        book.title,
+        book.author,
+        book.genre,
+        book.format,
+        book.fiction,
+        book.length,
+        book.description,
+        book.topics
+      ].join(" ").toLowerCase();
+
+      const avoidTerms = tokenize(prefs.avoid);
+      if (avoidTerms.length && avoidTerms.some(term => searchable.includes(term))) {
+        return null;
+      }
+
+      let score = 0;
+      const reasons = [];
+
+      if (prefs.genres.length && book.genre) {
+        const matchedGenres = prefs.genres.filter(g =>
+          normalizeText(book.genre).includes(normalizeText(g))
+        );
+
+        if (matchedGenres.length) {
+          score += 5 * matchedGenres.length;
+          reasons.push(`matches your interest in ${matchedGenres.join(", ")}`);
+        }
+      }
+
+      if (prefs.formats.length && book.format) {
+        const matchedFormats = prefs.formats.filter(f =>
+          normalizeText(book.format).includes(normalizeText(f))
+        );
+
+        if (matchedFormats.length) {
+          score += 4 * matchedFormats.length;
+          reasons.push(`matches your preferred format: ${matchedFormats.join(", ")}`);
+        }
+      }
+
+      if (prefs.favoriteAuthor && book.author) {
+        const fav = normalizeText(prefs.favoriteAuthor);
+        const author = normalizeText(book.author);
+
+        if (author.includes(fav) || fav.includes(author)) {
+          score += 7;
+          reasons.push(`is by your favorite author, ${book.author}`);
+        }
+      }
+
+      if (
+        prefs.fictionPreference &&
+        prefs.fictionPreference !== "either" &&
+        book.fiction
+      ) {
+        const fictionText = normalizeText(book.fiction);
+
+        if (fictionText.includes(prefs.fictionPreference)) {
+          score += 4;
+          reasons.push(`matches your preference for ${prefs.fictionPreference}`);
+        }
+      }
+
+      if (
+        prefs.bookLength &&
+        prefs.bookLength !== "no preference" &&
+        book.length
+      ) {
+        const lengthMatch = inferLengthMatch(book.length, prefs.bookLength);
+
+        if (lengthMatch === true) {
+          score += 3;
+          reasons.push(`matches your preferred ${prefs.bookLength} book length`);
+        }
+      }
+
+      if (prefs.recentBooks) {
+        const favoriteTokens = tokenize(prefs.recentBooks);
+        const bookText = normalizeText(
+          [book.genre, book.description, book.topics].join(" ")
+        );
+        const overlap = [...new Set(
+          favoriteTokens.filter(token => bookText.includes(token))
+        )];
+
+        if (overlap.length) {
+          score += Math.min(4, overlap.length * 2);
+          reasons.push("shares information or themes with books you said you recently enjoyed");
+        }
+      }
+
+      return { score, reasons };
+    }
+
+    function chooseRecommendations(prefs) {
+      const scored = state.books
+        .map(book => {
+          const result = scoreBook(book, prefs);
+          return result ? { book, ...result } : null;
+        })
+        .filter(Boolean)
+        .filter(item => item.score > 0)
+        .sort((a, b) => b.score - a.score);
+
+      if (scored.length < 2) return [];
+
+      const tiers = new Map();
+
+      scored.forEach(item => {
+        if (!tiers.has(item.score)) tiers.set(item.score, []);
+        tiers.get(item.score).push(item);
+      });
+
+      const randomized = [];
+
+      [...tiers.keys()].sort((a, b) => b - a).forEach(score => {
+        const group = tiers.get(score);
+
+        for (let i = group.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [group[i], group[j]] = [group[j], group[i]];
+        }
+
+        randomized.push(...group);
+      });
+
+      const maxAttempts = Math.min(40, randomized.length * 2);
+
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        const pool = attempt === 0
+          ? randomized
+          : [...randomized].sort(() => Math.random() - 0.5);
+
+        const candidate = pool.slice(0, 2);
+        const key = candidate
+          .map(x => x.book.title.toLowerCase())
+          .sort()
+          .join("|");
+
+        if (!state.previousSets.has(key)) {
+          state.previousSets.add(key);
+          return candidate;
+        }
+      }
+
+      const fallback = randomized.slice(0, 2);
+
+      if (fallback.length === 2) {
+        const key = fallback
+          .map(x => x.book.title.toLowerCase())
+          .sort()
+          .join("|");
+
+        state.previousSets.add(key);
+      }
+
+      return fallback;
+    }
+
+    function buildExplanation(item, prefs) {
+      if (!item.reasons.length) return "";
+
+      const uniqueReasons = [...new Set(item.reasons)];
+      let explanation =
+        `This book may be a good match because it ${uniqueReasons.join(" and ")}.`;
+
+      if (prefs.avoid) {
+        explanation +=
+          " Nothing in the uploaded information matched the topics you asked to avoid.";
+      }
+
+      return explanation;
+    }
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function displayRecommendations(items, prefs) {
+      const container = $("recommendations");
+      container.innerHTML = "";
+
+      items.forEach((item, index) => {
+        const book = item.book;
+        const card = document.createElement("article");
+        card.className = "book-card";
+
+        const tags = [];
+        if (book.genre) tags.push(book.genre);
+        if (book.format) tags.push(book.format);
+        if (book.fiction) tags.push(book.fiction);
+        if (book.length) tags.push(book.length);
+
+        const metadata = [
+          book.author ? `by ${escapeHtml(book.author)}` : "",
+          tags.length
+            ? tags.map(tag => `<span class="badge">${escapeHtml(tag)}</span>`).join("")
+            : ""
+        ].filter(Boolean).join(" ");
+
+        card.innerHTML = `
+          <h3>${index + 1}. ${escapeHtml(book.title)}</h3>
+          <div class="meta">${metadata || "No additional metadata supplied in the uploaded list."}</div>
+          <p>${escapeHtml(buildExplanation(item, prefs))}</p>
+        `;
+
+        container.appendChild(card);
+      });
+
+      $("resultsSection").style.display = "block";
+      $("downloadBtn").classList.add("hidden");
+      state.confirmed = false;
+
+      $("resultsSection").scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+    }
+
+    function generate(isRegeneration = false) {
+      clearStatus($("statusMessage"));
+      clearStatus($("resultStatus"));
+
+      if (!state.fileLoaded || !state.books.length) {
+        showStatus(
+          $("statusMessage"),
+          "First upload a Reading Olympics book list before generating recommendations.",
+          "error"
+        );
+        $("inputSection").scrollIntoView({ behavior: "smooth" });
+        return;
+      }
+
+      const prefs = getPreferences();
+
+      if (preferenceCount(prefs) < 1) {
+        showStatus(
+          $("statusMessage"),
+          "Please enter at least one reading preference before generating your list.",
+          "warning"
+        );
+        $("inputSection").scrollIntoView({ behavior: "smooth" });
+        return;
+      }
+
+      const recommendations = chooseRecommendations(prefs);
+
+      if (recommendations.length < 2) {
+        showStatus(
+          $("statusMessage"),
+          "I could not find two reliable matches using the information in your uploaded list. Please enter more information about your preferences, or use a book list with more details such as genre, format, fiction/nonfiction, length, description, or topics.",
+          "warning"
+        );
+        $("resultsSection").style.display = "none";
+        return;
+      }
+
+      state.recommendations = recommendations;
+      displayRecommendations(recommendations, prefs);
+
+      if (isRegeneration) {
+        showStatus(
+          $("resultStatus"),
+          "Here is another possible pair of matches using the same preferences. If the uploaded list does not contain enough different strong matches, some titles may repeat.",
+          "success"
+        );
+      }
+    }
+
+    $("generateBtn").addEventListener("click", () => generate(false));
+
+    $("tryAgainBtn").addEventListener("click", () => {
+      if (!state.recommendations.length) {
+        showStatus(
+          $("resultStatus"),
+          "Generate a book list first. Then you can use Try Again to look for other possible matches.",
+          "error"
+        );
+        return;
+      }
+
+      generate(true);
+    });
+
+    function startOver() {
+      document
+        .querySelectorAll('input[type="checkbox"]')
+        .forEach(el => el.checked = false);
+
+      $("favoriteAuthor").value = "";
+      $("recentBooks").value = "";
+      $("fictionPreference").value = "";
+      $("bookLength").value = "";
+      $("avoid").value = "";
+      $("bookFile").value = "";
+
+      state.books = [];
+      state.recommendations = [];
+      state.previousSets.clear();
+      state.confirmed = false;
+      state.fileLoaded = false;
+
+      $("recommendations").innerHTML = "";
+      $("resultsSection").style.display = "none";
+      $("downloadBtn").classList.add("hidden");
+
+      clearStatus($("statusMessage"));
+      clearStatus($("resultStatus"));
+
+      showStatus(
+        $("statusMessage"),
+        "Your previous information has been cleared. Upload a Reading Olympics book list and enter new preferences to begin again.",
+        "success"
+      );
+
+      $("inputSection").scrollIntoView({ behavior: "smooth" });
+    }
+
+    $("startOverBtn").addEventListener("click", startOver);
+    $("startOverResultsBtn").addEventListener("click", startOver);
+
+    $("confirmBtn").addEventListener("click", () => {
+      clearStatus($("resultStatus"));
+
+      if (!state.recommendations.length) {
+        showStatus(
+          $("resultStatus"),
+          "You need to generate a recommendation list before confirming it.",
+          "error"
+        );
+        return;
+      }
+
+      state.confirmed = true;
+      $("downloadBtn").classList.remove("hidden");
+
+      showStatus(
+        $("resultStatus"),
+        "Your list is confirmed. You can now use Download PDF.",
+        "success"
+      );
+    });
+
+    $("downloadBtn").addEventListener("click", () => {
+      clearStatus($("resultStatus"));
+
+      if (!state.confirmed) {
+        showStatus(
+          $("resultStatus"),
+          "Please select Confirm My List before downloading.",
+          "error"
+        );
+        return;
+      }
+
+      window.print();
+    });
+  </script>
+</body>
+</html>
